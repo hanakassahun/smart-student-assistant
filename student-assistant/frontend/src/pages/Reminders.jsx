@@ -1,0 +1,64 @@
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { apiFetch } from '../lib/api';
+
+export default function Reminders() {
+    const { token } = useAuth();
+    const [title, setTitle] = useState('');
+    const [dueAt, setDueAt] = useState('');
+    const [reminders, setReminders] = useState([]);
+
+    async function load() {
+        const res = await apiFetch('/reminders', { token });
+        setReminders(res.reminders);
+    }
+
+    useEffect(() => { if (token) { load(); } }, [token]);
+
+    async function addReminder() {
+        if (!title.trim() || !dueAt) return;
+        const res = await apiFetch('/reminders', { method: 'POST', token, body: { title, dueAt } });
+        setReminders([res.reminder, ...reminders]);
+        setTitle('');
+        setDueAt('');
+    }
+
+    async function toggleComplete(id, completed) {
+        const res = await apiFetch(`/reminders/${id}`, { method: 'PUT', token, body: { completed: !completed } });
+        setReminders(reminders.map(r => r._id === id ? res.reminder : r));
+    }
+
+    async function removeReminder(id) {
+        await apiFetch(`/reminders/${id}`, { method: 'DELETE', token });
+        setReminders(reminders.filter(r => r._id !== id));
+    }
+
+    return (
+		<div className="max-w-4xl mx-auto p-6">
+			<h2 className="text-xl font-semibold">Reminders</h2>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+                <input className="border p-2" placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} />
+                <input className="border p-2" type="datetime-local" value={dueAt} onChange={e => setDueAt(e.target.value)} />
+                <button onClick={addReminder} className="bg-blue-600 text-white px-3 py-2 rounded">Add</button>
+            </div>
+			<ul className="mt-4 space-y-2">
+                {reminders.map(r => (
+                    <li key={r._id} className="border p-3 rounded flex items-center justify-between">
+                        <div>
+                            <p className={r.completed ? 'line-through' : ''}>{r.title}</p>
+                            <p className="text-xs text-gray-500">Due: {new Date(r.dueAt).toLocaleString()}</p>
+                        </div>
+                        <div className="flex gap-3">
+                            <button onClick={() => toggleComplete(r._id, r.completed)} className="text-green-700">
+                                {r.completed ? 'Mark Incomplete' : 'Mark Done'}
+                            </button>
+                            <button onClick={() => removeReminder(r._id)} className="text-red-600">Delete</button>
+                        </div>
+                    </li>
+                ))}
+			</ul>
+		</div>
+	);
+}
+
+
