@@ -13,7 +13,13 @@ export default function Login() {
 		try {
 			setError('');
 			await login(email, password);
-			navigate('/dashboard');
+			const last = localStorage.getItem('lastPath');
+			if (last) {
+				localStorage.removeItem('lastPath');
+				navigate(last);
+			} else {
+				navigate('/dashboard');
+			}
 		} catch (e) {
 			setError(e.message || 'Login failed');
 		}

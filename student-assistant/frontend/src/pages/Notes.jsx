@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../lib/api';
+import { toast } from '../lib/toast';
 
 export default function Notes() {
     const { token } = useAuth();
@@ -8,22 +9,36 @@ export default function Notes() {
     const [title, setTitle] = useState('');
 
     async function load() {
-        const res = await apiFetch('/notes', { token });
-        setNotes(res.notes);
+        try {
+            const res = await apiFetch('/notes', { token });
+            setNotes(res.notes);
+        } catch (e) {
+            toast.error(e.message || 'Failed to load notes');
+        }
     }
 
     useEffect(() => { if (token) { load(); } }, [token]);
 
     async function addNote() {
         if (!title.trim()) return;
-        const res = await apiFetch('/notes', { method: 'POST', token, body: { title } });
-        setNotes([res.note, ...notes]);
-        setTitle('');
+        try {
+            const res = await apiFetch('/notes', { method: 'POST', token, body: { title } });
+            setNotes([res.note, ...notes]);
+            setTitle('');
+            toast.success('Note saved successfully');
+        } catch (e) {
+            toast.error(e.message || 'Failed to save note');
+        }
     }
 
     async function removeNote(id) {
-        await apiFetch(`/notes/${id}`, { method: 'DELETE', token });
-        setNotes(notes.filter(n => n._id !== id));
+        try {
+            await apiFetch(`/notes/${id}`, { method: 'DELETE', token });
+            setNotes(notes.filter(n => n._id !== id));
+            toast.success('Note removed');
+        } catch (e) {
+            toast.error(e.message || 'Failed to delete note');
+        }
     }
 
     return (

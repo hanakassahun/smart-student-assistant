@@ -1,4 +1,5 @@
 import React from 'react';
+import '../src/lib/toast';
 import { Link, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -20,6 +21,7 @@ function Home() {
 function App() {
 	return (
 		<div className="min-h-screen bg-gray-50">
+			{/* lightweight toast system initialized from src/lib/toast */}
 			<nav className="bg-white border-b">
 				<div className="max-w-6xl mx-auto px-4 py-3 flex gap-4">
 					<Link to="/" className="font-semibold">Home</Link>
