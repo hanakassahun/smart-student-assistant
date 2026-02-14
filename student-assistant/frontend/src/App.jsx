@@ -4,6 +4,8 @@ import { Link, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import ClientDetail from './pages/ClientDetail';
+import Clients from './pages/Clients';
 import Notes from './pages/Notes';
 import Reminders from './pages/Reminders';
 import Chat from './pages/Chat';
@@ -26,6 +28,7 @@ function App() {
 				<div className="max-w-6xl mx-auto px-4 py-3 flex gap-4">
 					<Link to="/" className="font-semibold">Home</Link>
 					<Link to="/notes">Notes</Link>
+					<Link to="/clients">Clients</Link>
 					<Link to="/reminders">Reminders</Link>
 					<Link to="/chat">AI Assistant</Link>
 					<Link to="/login" className="ml-auto">Login</Link>
@@ -36,6 +39,8 @@ function App() {
 				<Route path="/" element={<Home />} />
 				<Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 				<Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
+				<Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+				<Route path="/clients/:id" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
 				<Route path="/reminders" element={<ProtectedRoute><Reminders /></ProtectedRoute>} />
 				<Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
 				<Route path="/login" element={<Login />} />

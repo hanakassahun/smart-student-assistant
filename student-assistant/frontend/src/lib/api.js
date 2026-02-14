@@ -1,3 +1,5 @@
+import { eventBus } from './eventBus';
+
 const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
 
 async function rawFetch(url, opts = {}) {
@@ -48,6 +50,20 @@ async function apiFetch(path, { method = 'GET', body, token } = {}) {
 		const message = data?.error || res.statusText || 'Request failed';
 		throw new Error(message);
 	}
+
+	// emit update events for client/risk changes so UI can refresh state
+	try {
+		const m = (method || 'GET').toUpperCase();
+		if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(m)) {
+			const lp = path.toLowerCase();
+			if (lp.includes('/clients') || lp.includes('/risk') || lp.includes('/client')) {
+				eventBus.emit('client:updated', { path, method: m, body: body || null, response: data });
+			}
+			// generic entity update
+			eventBus.emit('entity:updated', { path, method: m, body: body || null, response: data });
+		}
+	} catch (_e) {}
+
 	return data;
 }
 
