@@ -6,7 +6,7 @@ const notesRoutes = require('./notes');
 const remindersRoutes = require('./reminders');
 const chatRoutes = require('./chat');
 const clientsRoutes = require('./clients');
-const streamRoutes = require('./stream');
+const { sseHandler } = require('../sse');
 
 const router = Router();
 
@@ -19,7 +19,7 @@ router.use('/notes', notesRoutes);
 router.use('/reminders', remindersRoutes);
 router.use('/chat', chatRoutes);
 router.use('/clients', clientsRoutes);
-router.use('/stream', streamRoutes);
+router.get('/stream', (req, res) => sseHandler(req, res));
 
 module.exports = router;
 
