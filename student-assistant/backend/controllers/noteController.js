@@ -1,6 +1,7 @@
 'use strict';
 
 const Note = require('../models/Note');
+const { createNoteSchema, updateNoteSchema } = require('../validators/notes');
 
 async function listNotes(req, res) {
 	const notes = await Note.find({ userId: req.userId }).sort({ updatedAt: -1 });
@@ -8,22 +9,31 @@ async function listNotes(req, res) {
 }
 
 async function createNote(req, res) {
-	const { title, content = '', tags = [] } = req.body;
-	if (!title) return res.status(400).json({ error: 'Title is required' });
-	const note = await Note.create({ userId: req.userId, title, content, tags });
-	res.status(201).json({ note });
+	try {
+		const parsed = createNoteSchema.parse(req.body);
+		const note = await Note.create({ userId: req.userId, title: parsed.title, content: parsed.content || '', tags: parsed.tags || [] });
+		res.status(201).json({ note });
+	} catch (err) {
+		if (err && err.errors) return res.status(400).json({ error: err.errors });
+		return res.status(500).json({ error: 'Create note failed' });
+	}
 }
 
 async function updateNote(req, res) {
-	const { id } = req.params;
-	const { title, content, tags } = req.body;
-	const note = await Note.findOneAndUpdate(
-		{ _id: id, userId: req.userId },
-		{ $set: { title, content, tags } },
-		{ new: true }
-	);
-	if (!note) return res.status(404).json({ error: 'Not found' });
-	res.json({ note });
+	try {
+		const parsed = updateNoteSchema.parse(req.body);
+		const { id } = req.params;
+		const note = await Note.findOneAndUpdate(
+			{ _id: id, userId: req.userId },
+			{ $set: parsed },
+			{ new: true }
+		);
+		if (!note) return res.status(404).json({ error: 'Not found' });
+		res.json({ note });
+	} catch (err) {
+		if (err && err.errors) return res.status(400).json({ error: err.errors });
+		return res.status(500).json({ error: 'Update note failed' });
+	}
 }
 
 async function deleteNote(req, res) {

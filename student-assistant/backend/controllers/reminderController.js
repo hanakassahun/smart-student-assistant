@@ -1,6 +1,7 @@
 'use strict';
 
 const Reminder = require('../models/Reminder');
+const { createReminderSchema, updateReminderSchema } = require('../validators/reminders');
 
 async function listReminders(req, res) {
 	const reminders = await Reminder.find({ userId: req.userId }).sort({ dueAt: 1 });
@@ -8,22 +9,31 @@ async function listReminders(req, res) {
 }
 
 async function createReminder(req, res) {
-	const { title, dueAt, type = 'other', notes = '' } = req.body;
-	if (!title || !dueAt) return res.status(400).json({ error: 'Missing fields' });
-	const reminder = await Reminder.create({ userId: req.userId, title, dueAt, type, notes });
-	res.status(201).json({ reminder });
+	try {
+		const parsed = createReminderSchema.parse(req.body);
+		const reminder = await Reminder.create({ userId: req.userId, title: parsed.title, dueAt: parsed.dueAt, type: parsed.type || 'other', notes: parsed.notes || '' });
+		res.status(201).json({ reminder });
+	} catch (err) {
+		if (err && err.errors) return res.status(400).json({ error: err.errors });
+		return res.status(500).json({ error: 'Create reminder failed' });
+	}
 }
 
 async function updateReminder(req, res) {
-	const { id } = req.params;
-	const { title, dueAt, type, notes, completed } = req.body;
-	const reminder = await Reminder.findOneAndUpdate(
-		{ _id: id, userId: req.userId },
-		{ $set: { title, dueAt, type, notes, completed } },
-		{ new: true }
-	);
-	if (!reminder) return res.status(404).json({ error: 'Not found' });
-	res.json({ reminder });
+	try {
+		const parsed = updateReminderSchema.parse(req.body);
+		const { id } = req.params;
+		const reminder = await Reminder.findOneAndUpdate(
+			{ _id: id, userId: req.userId },
+			{ $set: parsed },
+			{ new: true }
+		);
+		if (!reminder) return res.status(404).json({ error: 'Not found' });
+		res.json({ reminder });
+	} catch (err) {
+		if (err && err.errors) return res.status(400).json({ error: err.errors });
+		return res.status(500).json({ error: 'Update reminder failed' });
+	}
 }
 
 async function deleteReminder(req, res) {

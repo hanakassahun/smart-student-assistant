@@ -7,6 +7,7 @@ export default function Notes() {
     const { token } = useAuth();
     const [notes, setNotes] = useState([]);
     const [title, setTitle] = useState('');
+    const [formError, setFormError] = useState('');
 
     async function load() {
         try {
@@ -20,14 +21,20 @@ export default function Notes() {
     useEffect(() => { if (token) { load(); } }, [token]);
 
     async function addNote() {
-        if (!title.trim()) return;
+        setFormError('');
+        if (!title.trim()) {
+            setFormError('Title is required');
+            return;
+        }
         try {
             const res = await apiFetch('/notes', { method: 'POST', token, body: { title } });
             setNotes([res.note, ...notes]);
             setTitle('');
             toast.success('Note saved successfully');
         } catch (e) {
-            toast.error(e.message || 'Failed to save note');
+            const msg = e.message || 'Failed to save note';
+            toast.error(msg);
+            setFormError(msg);
         }
     }
 
@@ -45,7 +52,10 @@ export default function Notes() {
 		<div className="max-w-4xl mx-auto p-6">
 			<h2 className="text-xl font-semibold">Notes</h2>
             <div className="mt-4 flex gap-2">
-                <input className="border p-2 flex-1" placeholder="New note title" value={title} onChange={e => setTitle(e.target.value)} />
+                <div className="flex-1">
+                    <input className="border p-2 w-full" placeholder="New note title" value={title} onChange={e => setTitle(e.target.value)} />
+                    {formError && <p className="text-red-600 text-sm mt-1">{formError}</p>}
+                </div>
                 <button onClick={addNote} className="bg-blue-600 text-white px-3 py-2 rounded">Add</button>
             </div>
 			<ul className="mt-4 space-y-2">

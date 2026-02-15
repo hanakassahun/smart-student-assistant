@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../lib/api';
+import { toast } from '../lib/toast';
 
 export default function Reminders() {
     const { token } = useAuth();
     const [title, setTitle] = useState('');
     const [dueAt, setDueAt] = useState('');
+    const [formError, setFormError] = useState('');
     const [reminders, setReminders] = useState([]);
 
     async function load() {
@@ -16,11 +18,28 @@ export default function Reminders() {
     useEffect(() => { if (token) { load(); } }, [token]);
 
     async function addReminder() {
-        if (!title.trim() || !dueAt) return;
-        const res = await apiFetch('/reminders', { method: 'POST', token, body: { title, dueAt } });
-        setReminders([res.reminder, ...reminders]);
-        setTitle('');
-        setDueAt('');
+        setFormError('');
+        if (!title.trim()) {
+            setFormError('Title is required');
+            toast.error('Title is required');
+            return;
+        }
+        if (!dueAt || Number.isNaN(Date.parse(dueAt))) {
+            setFormError('Valid due date/time is required');
+            toast.error('Valid due date/time is required');
+            return;
+        }
+        try {
+            const res = await apiFetch('/reminders', { method: 'POST', token, body: { title, dueAt } });
+            setReminders([res.reminder, ...reminders]);
+            setTitle('');
+            setDueAt('');
+            toast.success('Reminder saved');
+        } catch (e) {
+            const msg = e.message || 'Failed to save reminder';
+            setFormError(msg);
+            toast.error(msg);
+        }
     }
 
     async function toggleComplete(id, completed) {
