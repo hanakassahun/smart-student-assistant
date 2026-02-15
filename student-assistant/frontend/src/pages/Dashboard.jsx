@@ -1,27 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
+import useAutoRefetch from '../lib/useAutoRefetch';
+
+function computeWeekData(reminders) {
+	const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+	const counts = { Sun:0, Mon:0, Tue:0, Wed:0, Thu:0, Fri:0, Sat:0 };
+	for (const r of reminders || []) {
+		const d = new Date(r.dueAt);
+		if (isNaN(d)) continue;
+		const name = days[d.getDay()];
+		counts[name] = (counts[name] || 0) + 1;
+	}
+	return [
+		{ name: 'Mon', tasks: counts.Mon || 0 },
+		{ name: 'Tue', tasks: counts.Tue || 0 },
+		{ name: 'Wed', tasks: counts.Wed || 0 },
+		{ name: 'Thu', tasks: counts.Thu || 0 },
+		{ name: 'Fri', tasks: counts.Fri || 0 },
+		{ name: 'Sat', tasks: counts.Sat || 0 },
+		{ name: 'Sun', tasks: counts.Sun || 0 }
+	];
+}
 
 export default function Dashboard() {
 	const [loading, setLoading] = useState(true);
+	const [reminders, setReminders] = useState([]);
 	const [data, setData] = useState([]);
 
+	useAutoRefetch(['reminder:created','reminder:updated','reminder:deleted'], '/reminders', (res) => {
+		const list = res?.reminders || [];
+		setReminders(list);
+		setData(computeWeekData(list));
+		setLoading(false);
+	}, { autoFetchOnMount: true });
+
 	useEffect(() => {
-		// Simulate fetch for dashboard data; replace with real API call later
-		setLoading(true);
-		const timeout = setTimeout(() => {
-			setData([
-				{ name: 'Mon', tasks: 2 },
-				{ name: 'Tue', tasks: 3 },
-				{ name: 'Wed', tasks: 1 },
-				{ name: 'Thu', tasks: 4 },
-				{ name: 'Fri', tasks: 2 },
-				{ name: 'Sat', tasks: 0 },
-				{ name: 'Sun', tasks: 1 }
-			]);
-			setLoading(false);
-		}, 700);
-		return () => clearTimeout(timeout);
-	}, []);
+		// derive chart data whenever reminders change
+		setData(computeWeekData(reminders));
+		if (loading && reminders.length) setLoading(false);
+	}, [reminders]);
 
 	return (
 		<div className="max-w-5xl mx-auto p-6">

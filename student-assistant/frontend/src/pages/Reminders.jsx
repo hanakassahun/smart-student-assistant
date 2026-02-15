@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../lib/api';
 import { toast } from '../lib/toast';
+import useAutoRefetch from '../lib/useAutoRefetch';
 
 export default function Reminders() {
     const { token } = useAuth();
@@ -10,12 +11,10 @@ export default function Reminders() {
     const [formError, setFormError] = useState('');
     const [reminders, setReminders] = useState([]);
 
-    async function load() {
-        const res = await apiFetch('/reminders', { token });
-        setReminders(res.reminders);
-    }
-
-    useEffect(() => { if (token) { load(); } }, [token]);
+    // automatically refetch when reminders change elsewhere
+    useAutoRefetch(['reminder:created','reminder:updated','reminder:deleted'], '/reminders', (res) => {
+        setReminders(res?.reminders || []);
+    }, { autoFetchOnMount: true });
 
     async function addReminder() {
         setFormError('');
@@ -31,7 +30,8 @@ export default function Reminders() {
         }
         try {
             const res = await apiFetch('/reminders', { method: 'POST', token, body: { title, dueAt } });
-            setReminders([res.reminder, ...reminders]);
+            // optimistic UI: prepend the returned reminder; auto-refetch will reconcile
+            setReminders((cur) => [res.reminder, ...cur]);
             setTitle('');
             setDueAt('');
             toast.success('Reminder saved');
@@ -44,12 +44,12 @@ export default function Reminders() {
 
     async function toggleComplete(id, completed) {
         const res = await apiFetch(`/reminders/${id}`, { method: 'PUT', token, body: { completed: !completed } });
-        setReminders(reminders.map(r => r._id === id ? res.reminder : r));
+        setReminders((cur) => cur.map(r => r._id === id ? res.reminder : r));
     }
 
     async function removeReminder(id) {
         await apiFetch(`/reminders/${id}`, { method: 'DELETE', token });
-        setReminders(reminders.filter(r => r._id !== id));
+        setReminders((cur) => cur.filter(r => r._id !== id));
     }
 
     return (
