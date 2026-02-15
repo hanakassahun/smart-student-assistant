@@ -10,6 +10,7 @@ import Notes from './pages/Notes';
 import Reminders from './pages/Reminders';
 import Chat from './pages/Chat';
 import ProtectedRoute from './components/ProtectedRoute';
+import SseConnector from './components/SseConnector';
 
 function Home() {
 	return (
@@ -23,6 +24,7 @@ function Home() {
 function App() {
 	return (
 		<div className="min-h-screen bg-gray-50">
+			<SseConnector />
 			{/* lightweight toast system initialized from src/lib/toast */}
 			<nav className="bg-white border-b">
 				<div className="max-w-6xl mx-auto px-4 py-3 flex gap-4">

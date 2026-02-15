@@ -12,6 +12,7 @@ async function createNote(req, res) {
 	try {
 		const parsed = createNoteSchema.parse(req.body);
 		const note = await Note.create({ userId: req.userId, title: parsed.title, content: parsed.content || '', tags: parsed.tags || [] });
+		try { const { broadcast } = require('../sse'); broadcast('note:created', note); } catch (_e) {}
 		res.status(201).json({ note });
 	} catch (err) {
 		if (err && err.errors) return res.status(400).json({ error: err.errors });
@@ -29,6 +30,7 @@ async function updateNote(req, res) {
 			{ new: true }
 		);
 		if (!note) return res.status(404).json({ error: 'Not found' });
+		try { const { broadcast } = require('../sse'); broadcast('note:updated', note); } catch (_e) {}
 		res.json({ note });
 	} catch (err) {
 		if (err && err.errors) return res.status(400).json({ error: err.errors });
@@ -40,6 +42,7 @@ async function deleteNote(req, res) {
 	const { id } = req.params;
 	const deleted = await Note.findOneAndDelete({ _id: id, userId: req.userId });
 	if (!deleted) return res.status(404).json({ error: 'Not found' });
+	try { const { broadcast } = require('../sse'); broadcast('note:deleted', { id }); } catch (_e) {}
 	res.json({ success: true });
 }
 
