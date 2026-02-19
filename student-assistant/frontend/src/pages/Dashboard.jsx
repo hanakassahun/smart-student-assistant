@@ -26,13 +26,14 @@ export default function Dashboard() {
 	const [loading, setLoading] = useState(true);
 	const [reminders, setReminders] = useState([]);
 	const [data, setData] = useState([]);
+	const [error, setError] = useState('');
 
 	useAutoRefetch(['reminder:created','reminder:updated','reminder:deleted'], '/reminders', (res) => {
 		const list = res?.reminders || [];
 		setReminders(list);
 		setData(computeWeekData(list));
 		setLoading(false);
-	}, { autoFetchOnMount: true });
+	}, { autoFetchOnMount: true, setError });
 
 	useEffect(() => {
 		// derive chart data whenever reminders change
@@ -49,6 +50,13 @@ export default function Dashboard() {
 					<div className="animate-pulse h-full flex flex-col gap-4 p-2">
 						<div className="h-6 bg-gray-200 rounded w-1/3" />
 						<div className="flex-1 bg-gray-100 rounded" />
+					</div>
+				) : error ? (
+					<div className="h-full flex items-center justify-center">
+						<div className="text-center">
+							<p className="text-red-600 mb-4">{error}</p>
+							<button onClick={() => window.location.reload()} className="bg-blue-600 text-white px-4 py-2 rounded">Try Again</button>
+						</div>
 					</div>
 				) : (
 					<ResponsiveContainer width="100%" height="100%">

@@ -8,13 +8,19 @@ export default function Notes() {
     const [notes, setNotes] = useState([]);
     const [title, setTitle] = useState('');
     const [formError, setFormError] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     async function load() {
+        setLoading(true);
+        setError('');
         try {
             const res = await apiFetch('/notes', { token });
             setNotes(res.notes);
         } catch (e) {
-            toast.error(e.message || 'Failed to load notes');
+            setError(e.message || 'Failed to load notes');
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -58,14 +64,30 @@ export default function Notes() {
                 </div>
                 <button onClick={addNote} className="bg-blue-600 text-white px-3 py-2 rounded">Add</button>
             </div>
-			<ul className="mt-4 space-y-2">
-                {notes.map(n => (
-                    <li key={n._id} className="border p-3 rounded flex justify-between items-center">
-                        <span>{n.title}</span>
-                        <button onClick={() => removeNote(n._id)} className="text-red-600">Delete</button>
-                    </li>
-                ))}
-			</ul>
+            <div className="mt-6 bg-white border rounded p-4">
+                {loading ? (
+                    <div className="space-y-3">
+                        <div className="h-4 bg-gray-200 rounded w-1/3 animate-pulse" />
+                        <div className="h-8 bg-gray-100 rounded animate-pulse" />
+                        <div className="h-8 bg-gray-100 rounded animate-pulse" />
+                    </div>
+                ) : error ? (
+                    <div className="text-center py-8">
+                        <p className="text-red-600 mb-4">{error}</p>
+                        <button onClick={load} className="bg-blue-600 text-white px-4 py-2 rounded">Try Again</button>
+                    </div>
+                ) : (
+                    <ul className="space-y-2">
+                        {notes.length === 0 && <li className="text-gray-500">No notes found.</li>}
+                        {notes.map(n => (
+                            <li key={n._id} className="border p-3 rounded flex justify-between items-center">
+                                <span>{n.title}</span>
+                                <button onClick={() => removeNote(n._id)} className="text-red-600">Delete</button>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
 		</div>
 	);
 }

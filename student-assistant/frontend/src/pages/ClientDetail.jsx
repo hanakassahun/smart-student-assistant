@@ -8,16 +8,23 @@ import useAutoRefetch from '../lib/useAutoRefetch';
 export default function ClientDetail() {
   const { id } = useParams();
   const [client, setClient] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     let mounted = true;
     async function load(){
+      setLoading(true);
+      setError('');
       try{
         const res = await apiFetch(`/clients/${id}`);
         if(!mounted) return;
         setClient(res.client || res);
       }catch(e){
-        // ignore; component can show fallback
+        if(!mounted) return;
+        setError(e.message || 'Failed to load client');
+      } finally {
+        if(mounted) setLoading(false);
       }
     }
     load();
@@ -27,12 +34,30 @@ export default function ClientDetail() {
   // will auto-refetch when `client:updated` or generic entity update events are emitted
   useAutoRefetch('client:updated', `/clients/${id}`, setClient, { autoFetchOnMount: false });
 
-  if (!client) return (
+  if (loading) return (
     <div className="max-w-4xl mx-auto p-6">
       <h2 className="text-xl font-semibold">Client</h2>
       <div className="mt-4 animate-pulse">
         <div className="h-6 bg-gray-200 rounded w-1/4 mb-3" />
         <div className="h-10 bg-gray-100 rounded w-1/3" />
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="max-w-4xl mx-auto p-6">
+      <h2 className="text-xl font-semibold">Client</h2>
+      <div className="mt-4 text-center">
+        <p className="text-red-600">{error}</p>
+      </div>
+    </div>
+  );
+
+  if (!client) return (
+    <div className="max-w-4xl mx-auto p-6">
+      <h2 className="text-xl font-semibold">Client</h2>
+      <div className="mt-4">
+        <p className="text-gray-500">Client not found.</p>
       </div>
     </div>
   );
